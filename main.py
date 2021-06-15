@@ -30,10 +30,11 @@ def telegram_bot(request):
 		user.getCommand()
 		commandHandler(user)
 
-		if user.firebaseDoc.get().exists:
-			user.updateFirebase()
-		else:
-			user.setFirebase()
+		if user.update is not None:
+			if user.firebaseDoc.get().exists:
+				user.updateFirebase()
+			else:
+				user.setFirebase()
 		user.sendMessage()
 	return "okay"
 

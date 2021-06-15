@@ -5,12 +5,12 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 
 class User:
 	def __init__(self, update, bot, db):
-		self.update = update
-		if self.update.message:
+		self.teleupdate = update
+		if self.teleupdate.message:
 			self.chat_id = update.message.chat.id
 			self.text = update.message.text
 			self.user_id = update.message.from_user.id
-		elif self.update.callback_query:
+		elif self.teleupdate.callback_query:
 			self.query = update.callback_query
 			self.chat_id = self.query.message.chat_id
 			self.user_id = self.query.from_user.id
@@ -25,7 +25,7 @@ class User:
 		self.firebaseDoc = db.collection("users").document(str(self.user_id))
 		self.reply = "Oops, something went wrong!"
 		self.reply_markup = None
-		self.update = dict()
+		self.update = None
 		self.firebaseDict = None
 		self.conversation = {
 			"command": None,
