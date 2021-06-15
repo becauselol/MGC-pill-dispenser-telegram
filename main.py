@@ -10,7 +10,7 @@ from classes import User
 from subClasses import Patient, Caretaker, Doctor
 
 # Use the application default credentials
-cred = credentials.Certificate("pill-dispenser-mgc-firebase-adminsdk-pom2m-a0e2ab93ec.json")
+cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 
 db = firestore.client()
