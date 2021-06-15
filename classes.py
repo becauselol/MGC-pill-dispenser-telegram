@@ -1,6 +1,6 @@
 import datetime
 import telegram
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 
 
 class User:
@@ -34,6 +34,10 @@ class User:
 		}
 		self.requiredKeys = ["conversation", "name", "role", "age", "user_id"]
 
+	def getCommand(self):
+		if self.text.split()[0][0] == '/':
+			self.conversation["command"] = self.text[1:]
+
 	def start(self):
 		self.update = {
 			"user_id": self.user_id,
@@ -65,15 +69,19 @@ class User:
 		self.reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
 
 	def getName(self):
-		self.update = {
-			"role": self.text.lower(),
-			"conversation.state": 2
-		}
-
-		self.reply = """
-				We will now proceed with setting you up and getting your basic information
-				Please enter your name
-			"""
+		startRes = ["Patient", "Caretaker", "Doctor"]
+		if self.text in startRes:
+			self.update = {
+				"role": self.text.lower(),
+				"conversation.state": 2
+			}
+			self.reply_markup = ReplyKeyboardRemove()
+			self.reply = """
+					We will now proceed with setting you up and getting your basic information
+					Please enter your name
+				"""
+		else:
+			self.reply = "Please select only from the options provided in the keyboard"
 
 	def getAge(self):
 		self.update = {
@@ -101,6 +109,9 @@ class User:
 			self.reply = """
 						I'm sorry I didn't understand that, please key in your age again
 					"""
+
+	def fallback(self):
+		self.reply = "Some shit went wrong"
 
 	#Adapted Firebase commands
 	def updateFirebase(self):

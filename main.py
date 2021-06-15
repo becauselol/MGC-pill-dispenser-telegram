@@ -27,11 +27,8 @@ def telegram_bot(request):
 	#handle the command
 	if request.method == "POST":
 		user = initializer(update, bot, db)
-
-		if update.message:
-			textHandler(user)
-		elif update.callback_query:
-			callbackHandler(user)
+		user.getCommand()
+		commandHandler(user)
 
 		if user.firebaseDoc.get().exists:
 			user.updateFirebase()
@@ -40,26 +37,32 @@ def telegram_bot(request):
 		user.sendMessage()
 	return "okay"
 
-def textHandler(user):
-	startRes = ["Patient", "Caretaker", "Doctor"]
-	if user.conversation["state"] == 0:
-		if user.text == '/start':
-			user.start()
-	elif user.conversation["state"] == 1:
-		if (user.text in startRes) and (user.conversation["command"] == 'start'):
-			user.getName()
-	elif user.conversation["state"] == 2:
-		if user.conversation["command"] == 'start':
-			user.getAge()
-	elif user.conversation["state"] == 3:
-		if user.conversation["command"] == 'start':
-			user.updateAge()
+def commandHandler(user):
+	start = {
+		"conversationList" : {
+			0: user.start,
+			1: user.getName,
+			2: user.getAge,
+			3: user.updateAge
+		},
+		"fallback" : user.fallback
+	}
 
-def commandHandler(command):
-	pass
+	commandList = {
+		"start": start
+	}
 
-def callbackHandler(user):
-	pass
+	fallback = {
+		"conversationList" : {
+			0: user.fallback
+		},
+		"fallback" : user.fallback
+	}
+	conversationHandler(user, **commandList.get(user.conversation["command"], fallback))
+
+def conversationHandler(user, conversationList, fallback):
+	function = conversationList.get(user.conversation["state"], fallback)
+	function()
 
 def initializer(update, bot, db):
 	if update.message:
