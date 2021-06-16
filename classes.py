@@ -38,12 +38,28 @@ class User:
 		if self.text.split()[0][0] == '/':
 			self.conversation["command"] = self.text[1:]
 
+	# How to write a command function
+	# def exampleFunc(self):
+	# 	self.update = {
+	# 		Put in stuff that needs to be processed based on what the previous message was in a dictionary
+	# 		Important things for start of command is
+	# 		"conversation": {
+	# 			"command": self.conversation["command"]
+	# 		}
+	# 	}
+	#
+	# 	self.reply = """
+	# 		Type in what the bot will be replying the user
+	# 	"""
+	#
+	# 	self.reply_markup = Any additional information required (Unlikely u need it)
+
+	# Start Command
 	def start(self):
 		self.update = {
 			"user_id": self.user_id,
 			"conversation": {
 				"command": "start",
-				"state": 1,
 				"start": datetime.datetime.now()
 			},
 			"role" : None
@@ -68,25 +84,23 @@ class User:
 		]
 		self.reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
 
-	def getName(self):
+	def getName(self): # For example
 		startRes = ["Patient", "Caretaker", "Doctor"]
 		if self.text in startRes:
 			self.update = {
-				"role": self.text.lower(),
-				"conversation.state": 2
+				"role": self.text.lower() # Saves the users role since that was the incoming message
 			}
 			self.reply_markup = ReplyKeyboardRemove()
 			self.reply = """
 					We will now proceed with setting you up and getting your basic information
-					Please enter your name
-				"""
+					Please enter your name 
+				""" # Replies with the following
 		else:
 			self.reply = "Please select only from the options provided in the keyboard"
 
 	def getAge(self):
 		self.update = {
 			"name": self.text,
-			"conversation.state": 3
 		}
 
 		self.reply = """
@@ -97,9 +111,6 @@ class User:
 		if self.text.isnumeric():
 			self.update = {
 				"age": int(self.text),
-				"conversation": {
-					"state": 0
-				}
 			}
 
 			self.reply = """
@@ -109,6 +120,21 @@ class User:
 			self.reply = """
 						I'm sorry I didn't understand that, please key in your age again
 					"""
+
+	# State functions
+	def setState(self, value):
+		self.update["conversation"]["state"] = value
+
+	def incrementState(self):
+		self.conversation["state"] += 1
+		if "conversation" in self.update:
+			self.update["conversation"]["state"] = self.conversation["state"]
+		else:
+			self.update["conversation.state"] = self.conversation["state"]
+
+	def resetState(self):
+		self.conversation["state"] = 0
+		self.update["conversation.state"] = self.conversation["state"]
 
 	def fallback(self):
 		self.reply = "Some shit went wrong"
@@ -135,7 +161,6 @@ class User:
 			for key, value in self.firebaseDict.items():
 				if key in self.requiredKeys:
 					self.__dict__[key] = value
-			print("updated")
 
 	#Adapted Telegram bot commands
 	def sendMessage(self):
