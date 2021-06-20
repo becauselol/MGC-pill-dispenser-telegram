@@ -25,11 +25,12 @@ class User:
 		self.firebaseDoc = db.collection("users").document(str(self.user_id))
 		self.reply = "Oops, something went wrong!"
 		self.reply_markup = None
-		self.update = None
+		self.update = []
 		self.firebaseDict = None
+		self.updateLocation = []
 		self.conversation = {
 			"command": None,
-			"start": None,
+			"start": datetime.datetime.now(),
 			"state": 0
 		}
 		self.requiredKeys = ["conversation", "name", "role", "age", "user_id"]
@@ -56,14 +57,15 @@ class User:
 
 	# Start Command
 	def start(self):
-		self.update = {
+		update = {
 			"user_id": self.user_id,
 			"conversation": {
-				"command": "start",
+				"command": self.conversation["command"],
 				"start": datetime.datetime.now()
 			},
 			"role" : None
 		}
+		self.addUpdate(update)
 
 		self.reply = """
 			Welcome to <b>Pill Dispenser</b>, thank you for using my service
@@ -87,21 +89,23 @@ class User:
 	def getName(self): # For example
 		startRes = ["Patient", "Caretaker", "Doctor"]
 		if self.text in startRes:
-			self.update = {
+			update = {
 				"role": self.text.lower() # Saves the users role since that was the incoming message
 			}
+			self.addUpdate(update)
 			self.reply_markup = ReplyKeyboardRemove()
 			self.reply = """
 					We will now proceed with setting you up and getting your basic information
 					Please enter your name 
-				""" # Replies with the following
+				"""  # Replies with the following
 		else:
 			self.reply = "Please select only from the options provided in the keyboard"
 
 	def getAge(self):
-		self.update = {
+		update = {
 			"name": self.text,
 		}
+		self.addUpdate(update)
 
 		self.reply = """
 			Now please enter your age
@@ -109,45 +113,56 @@ class User:
 
 	def updateAge(self):
 		if self.text.isnumeric():
-			self.update = {
+			update = {
 				"age": int(self.text),
 			}
-
+			self.addUpdate(update)
+			
 			self.reply = """
 				Thanks for completing set up
 			"""
 		else:
 			self.reply = """
-						I'm sorry I didn't understand that, please key in your age again
-					"""
+				I'm sorry I didn't understand that, please key in your age again
+			"""
 
 	# State functions
-	def setState(self, value):
-		self.update["conversation"]["state"] = value
-
 	def incrementState(self):
 		self.conversation["state"] += 1
-		if "conversation" in self.update:
-			self.update["conversation"]["state"] = self.conversation["state"]
-		else:
-			self.update["conversation.state"] = self.conversation["state"]
+		update = {
+			"conversation.state": self.conversation["state"]
+		}
+		self.addUpdate(update)
 
 	def resetState(self):
 		self.conversation["state"] = 0
-		self.update["conversation.state"] = self.conversation["state"]
+		update = {
+			"conversation": {
+				"state": self.conversation["state"]
+			}
+		}
+		self.addUpdate(update)
 
 	def fallback(self):
 		self.reply = "Some shit went wrong"
 
 	#Adapted Firebase commands
+	def addUpdate(self, update, updateLocation = None):
+		self.update.append(update)
+		if updateLocation is None:
+			self.updateLocation.append(self.firebaseDoc)
+		else:
+			self.updateLocation.append(updateLocation)
+
 	def updateFirebase(self):
-		self.firebaseDoc.update(self.update)
+		for i in range(len(self.update)):
+			if self.updateLocation[i].get().exists:
+				self.updateLocation[i].update(self.update[i])
+			else:
+				self.updateLocation[i].set(self.update[i])
 
 	def getFirebase(self):
 		self.firebaseDoc.get()
-
-	def setFirebase(self):
-		self.firebaseDoc.set(self.update)
 
 	def getFirebaseInfo(self):
 		if self.firebaseDoc.get().exists:
